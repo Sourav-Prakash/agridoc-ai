@@ -1,4 +1,4 @@
-```python
+
 """
 AgriDoc AI - Streamlit Web Application
 Ready for Streamlit Community Cloud deployment.
@@ -732,4 +732,4 @@ if image_bytes is not None:
                     st.error(
                         f"Diagnostic Error: {str(ex)}"
                     )
-```
+
