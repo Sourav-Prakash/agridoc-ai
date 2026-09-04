@@ -138,15 +138,25 @@ Guidelines:
 """
 
 def get_api_key() -> Optional[str]:
+    raw_key = None
     # 1. Check Streamlit Secrets (for Streamlit Cloud)
     if "GEMINI_API_KEY" in st.secrets:
-        return st.secrets["GEMINI_API_KEY"]
+        raw_key = st.secrets["GEMINI_API_KEY"]
     # 2. Check local environment variables
-    env_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if env_key:
-        return env_key
+    elif os.getenv("GEMINI_API_KEY", "").strip():
+        raw_key = os.getenv("GEMINI_API_KEY", "").strip()
     # 3. Check session state (from sidebar input)
-    return st.session_state.get("user_gemini_api_key", None)
+    elif st.session_state.get("user_gemini_api_key", "").strip():
+        raw_key = st.session_state.get("user_gemini_api_key", "").strip()
+    
+    if not raw_key:
+        return None
+    
+    clean_key = str(raw_key).strip().strip('"').strip("'").strip()
+    if clean_key in ["YOUR_ACTUAL_GEMINI_KEY", "YOUR_ACTUAL_GEMINI_API_KEY", "YOUR_API_KEY"]:
+        return None
+        
+    return clean_key
 
 
 # --- Sidebar ---
