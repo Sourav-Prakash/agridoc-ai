@@ -1,0 +1,138 @@
+/* AgriDoc AI - Custom Styling & Print Layout */
+
+:root {
+  --primary-green: #10b981;
+  --primary-dark: #065f46;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+}
+
+/* Viewfinder overlay for live camera */
+.viewfinder-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.viewfinder-guide {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 1.5rem;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+}
+
+.viewfinder-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: #34d399;
+  border-style: solid;
+}
+
+.corner-tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
+.corner-tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
+.corner-bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
+.corner-br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
+
+/* Subtle pulse animation for active scanning */
+@keyframes scan-line {
+  0% { transform: translateY(0%); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: translateY(300px); opacity: 0.2; }
+}
+
+.scan-laser {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #10b981, #34d399, transparent);
+  box-shadow: 0 0 12px #34d399;
+  animation: scan-line 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Badges & Highlights */
+.badge-severe {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.badge-moderate {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.badge-low {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.badge-healthy {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+/* Print Prescription Stylesheet */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+    margin: 0;
+    padding: 10mm;
+  }
+
+  /* Hide interactive elements, controls, camera and navigation when printing */
+  nav,
+  #input-section,
+  #loading-section,
+  #error-section,
+  #non-plant-section,
+  .no-print,
+  button,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  #results-section {
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-prescription-header {
+    display: block !important;
+    border-bottom: 2px solid #065f46;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .card-print {
+    break-inside: avoid;
+    border: 1px solid #d1d5db !important;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    margin-bottom: 12px !important;
+  }
+
+  a {
+    text-decoration: none;
+    color: #000;
+  }
+}
+
+.print-prescription-header {
+  display: none;
+}

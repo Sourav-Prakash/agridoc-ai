@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriDoc AI - Crop Disease Diagnosis & Remedy Advisor</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- Navigation Bar -->
+  <nav class="bg-brand-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-500/20 flex items-center justify-center border border-brand-500/40 text-brand-400 text-xl">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold tracking-tight text-white">AgriDoc <span class="text-brand-400">AI</span></span>
+          <span class="hidden sm:inline-block text-xs text-brand-200 ml-2 px-2 py-0.5 rounded-full bg-brand-800/80 border border-brand-700">Crop Health & Medicine Advisor</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- API Key Status Badge -->
+        <div id="key-badge" class="flex items-center space-x-1.5 text-xs px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="key-badge-text">Checking API Key...</span>
+        </div>
+        
+        <!-- Settings Button -->
+        <button id="open-settings-btn" class="flex items-center space-x-1.5 text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          <i class="fa-solid fa-gear"></i>
+          <span class="hidden sm:inline">Settings</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Missing Key Warning Banner (conditional) -->
+  <div id="missing-key-banner" class="hidden bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-2.5 text-sm text-center">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
+      <span><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-2"></i>Gemini API Key is not configured. Please add your key to enable disease diagnosis.</span>
+      <button id="banner-set-key-btn" class="font-semibold text-brand-700 hover:text-brand-900 underline ml-2">Configure Key</button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Hero Header -->
+    <header class="text-center mb-8 no-print">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+        Instant AI Crop Disease Diagnosis
+      </h1>
+      <p class="mt-2 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
+        Capture or upload an image of an infected leaf or crop. Our AI identifies the disease, assesses severity, and prescribes exact chemical medicines and organic remedies.
+      </p>
+    </header>
+
+    <!-- Input Section (Camera / Upload Tabs) -->
+    <section id="input-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 no-print">
+      
+      <!-- Tab Header -->
+      <div class="flex border-b border-slate-200 bg-slate-50/75">
+        <button id="tab-camera-btn" class="flex-1 py-3.5 px-4 text-center font-medium text-sm flex items-center justify-center space-x-2 border-b-2 border-brand-600 text-brand-700 bg-white transition">
+          <i class="fa-solid fa-camera"></i>
+          <span>Live Camera</span>
+        </button>
+        <button id="tab-upload-btn" class="flex-1 py-3.5 px-4 text-center font-medium text-sm flex items-center justify-center space-x-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 transition">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Upload Image</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-6">
+        
+        <!-- Live Camera Panel -->
+        <div id="panel-camera" class="block">
+          <div class="max-w-lg mx-auto">
+            <!-- Camera Viewport -->
+            <div id="camera-container" class="relative bg-slate-950 aspect-[4/3] rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+              
+              <!-- Video Stream -->
+              <video id="camera-feed" class="w-full h-full object-cover hidden" autoplay playsinline></video>
+              <canvas id="camera-canvas" class="hidden"></canvas>
+
+              <!-- Viewfinder Overlay (active when camera is running) -->
+              <div id="camera-overlay" class="hidden absolute inset-0 pointer-events-none">
+                <div class="viewfinder-guide">
+                  <div class="viewfinder-corner corner-tl"></div>
+                  <div class="viewfinder-corner corner-tr"></div>
+                  <div class="viewfinder-corner corner-bl"></div>
+                  <div class="viewfinder-corner corner-br"></div>
+                </div>
+                <div class="scan-laser"></div>
+                <div class="absolute bottom-3 left-0 right-0 text-center text-white/80 text-xs drop-shadow">
+                  Align diseased leaf within the guide
+                </div>
+              </div>
+
+              <!-- Camera Idle / Placeholder -->
+              <div id="camera-placeholder" class="text-center p-6 text-slate-400">
+                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center mx-auto mb-3 text-2xl text-slate-500 border border-slate-800">
+                  <i class="fa-solid fa-camera"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-300">Camera is off</p>
+                <p class="text-xs text-slate-500 mt-1">Click "Start Camera" below to capture a live plant leaf</p>
+              </div>
+
+              <!-- Captured Snapshot Preview (Camera Mode) -->
+              <img id="camera-snapshot-preview" class="w-full h-full object-cover hidden" alt="Captured Crop Preview" />
+            </div>
+
+            <!-- Camera Controls Toolbar -->
+            <div class="mt-4 flex items-center justify-center gap-3">
+              <button id="start-camera-btn" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition shadow-sm flex items-center space-x-2">
+                <i class="fa-solid fa-video"></i>
+                <span>Start Camera</span>
+              </button>
+
+              <button id="switch-camera-btn" class="hidden px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition border border-slate-300" title="Switch front/back camera">
+                <i class="fa-solid fa-repeat"></i>
+              </button>
+
+              <button id="capture-btn" class="hidden px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-md flex items-center space-x-2">
+                <i class="fa-solid fa-circle-dot text-rose-400"></i>
+                <span>Capture & Diagnose</span>
+              </button>
+
+              <button id="retake-btn" class="hidden px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium transition">
+                <i class="fa-solid fa-rotate-left mr-1"></i> Retake
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- File Upload Panel -->
+        <div id="panel-upload" class="hidden">
+          <div class="max-w-lg mx-auto">
+            <!-- Dropzone Area -->
+            <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-50 hover:bg-brand-50/30 group">
+              <input type="file" id="file-input" class="hidden" accept="image/*" />
+              
+              <!-- Dropzone Prompt -->
+              <div id="dropzone-prompt">
+                <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-3 text-2xl group-hover:scale-110 transition duration-200">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-800">
+                  Click to choose a photo or drag & drop here
+                </p>
+                <p class="text-xs text-slate-500 mt-1">
+                  Supports JPEG, PNG, WEBP (up to 20MB)
+                </p>
+              </div>
+
+              <!-- Uploaded Preview -->
+              <div id="upload-preview-container" class="hidden">
+                <img id="upload-preview-img" class="max-h-64 mx-auto rounded-xl shadow-sm object-contain" alt="Uploaded leaf preview" />
+                <p id="upload-file-name" class="text-xs text-slate-500 mt-2 truncate font-mono"></p>
+                <button id="remove-upload-btn" class="mt-2 text-xs text-rose-600 hover:text-rose-800 font-medium">
+                  <i class="fa-solid fa-trash mr-1"></i> Choose a different image
+                </button>
+              </div>
+            </div>
+
+            <!-- Upload Action Button -->
+            <div class="mt-4 text-center">
+              <button id="diagnose-upload-btn" class="hidden w-full py-3 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-microscope"></i>
+                <span>Diagnose Uploaded Crop</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Loading State Section -->
+    <section id="loading-section" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-10 text-center mb-8 no-print">
+      <div class="max-w-md mx-auto">
+        <div class="relative w-20 h-20 mx-auto mb-4">
+          <div class="absolute inset-0 rounded-full border-4 border-brand-100 border-t-brand-600 animate-spin"></div>
+          <div class="absolute inset-0 flex items-center justify-center text-brand-600 text-xl">
+            <i class="fa-solid fa-seedling"></i>
+          </div>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">Analyzing Crop Health...</h3>
+        <p id="loading-step" class="text-sm text-slate-500 mt-1 transition-all duration-300">
+          Inspecting leaf foliage and surface lesions...
+        </p>
+        <div class="w-48 h-1.5 bg-slate-100 rounded-full mx-auto mt-4 overflow-hidden">
+          <div class="h-full bg-brand-500 rounded-full animate-pulse w-3/4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Alert Section -->
+    <div id="error-section" class="hidden bg-rose-50 border border-rose-200 rounded-2xl p-6 mb-8 text-rose-800 no-print">
+      <div class="flex items-start space-x-3">
+        <i class="fa-solid fa-circle-exclamation text-rose-600 text-xl mt-0.5"></i>
+        <div>
+          <h4 class="font-bold text-base text-rose-900">Diagnosis Error</h4>
+          <p id="error-message" class="text-sm mt-1 text-rose-700"></p>
+          <button id="dismiss-error-btn" class="mt-3 text-xs font-semibold text-rose-900 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-lg transition">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Non-Plant Warning Section -->
+    <div id="non-plant-section" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8 text-amber-800 text-center no-print">
+      <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-2xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h4 class="font-bold text-lg text-amber-900">Not Recognized as a Crop or Plant</h4>
+      <p class="text-sm text-amber-700 max-w-md mx-auto mt-1">
+        The uploaded image does not appear to contain a plant specimen or crop foliage. Please take a clear, well-lit photo of an agricultural plant leaf, fruit, or stem.
+      </p>
+      <button id="try-again-btn" class="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-medium transition shadow-sm">
+        Try Another Photo
+      </button>
+    </div>
+
+    <!-- Results Section (Full Diagnosis & Printable Prescription) -->
+    <section id="results-section" class="hidden">
+
+      <!-- Formal Print Header (Only visible on paper / PDF print) -->
+      <div class="print-prescription-header">
+        <div class="flex justify-between items-start">
+          <div>
+            <h1 class="text-2xl font-bold text-emerald-900">AgriDoc Agricultural Clinic</h1>
+            <p class="text-xs text-slate-500">Official Field Crop Diagnostic & Prescription Sheet</p>
+          </div>
+          <div class="text-right text-xs text-slate-600">
+            <p><strong>Date:</strong> <span id="print-date"></span></p>
+            <p><strong>Diagnostic Engine:</strong> Gemini Vision AI</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar (Top of Results) -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">
+        <button id="new-scan-btn" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition flex items-center space-x-2">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Scan Another Crop</span>
+        </button>
+
+        <button id="print-btn" class="px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition shadow-sm flex items-center space-x-2">
+          <i class="fa-solid fa-print"></i>
+          <span>Print / Save Prescription PDF</span>
+        </button>
+      </div>
+
+      <!-- Diagnosis Overview Banner -->
+      <div class="card-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="res-badge-condition-type" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 uppercase tracking-wider">Fungal</span>
+              <span id="res-badge-severity" class="text-xs font-bold px-2.5 py-1 rounded-full badge-severe">Severe</span>
+              <span id="res-badge-urgency" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800">Immediate Action Needed</span>
+            </div>
+            <h2 id="res-crop-name" class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">Tomato (Solanum lycopersicum)</h2>
+            <h3 id="res-condition-name" class="text-lg sm:text-xl font-semibold text-rose-600 mt-0.5">Early Blight (Alternaria solani)</h3>
+          </div>
+
+          <div class="flex items-center space-x-4 bg-slate-50 p-4 rounded-xl border border-slate-200 self-start md:self-auto">
+            <div class="text-right">
+              <span class="text-xs text-slate-500 font-medium block">Diagnostic Confidence</span>
+              <span id="res-confidence" class="text-2xl font-black text-slate-800">95%</span>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disease Cause & Pathogen Description -->
+        <div class="mt-6">
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Pathology & Description</h4>
+          <p id="res-description" class="text-sm text-slate-700 leading-relaxed"></p>
+        </div>
+
+        <!-- Detected Visual Symptoms -->
+        <div class="mt-6">
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Detected Symptoms on Specimen</h4>
+          <div id="res-symptoms-list" class="flex flex-wrap gap-2">
+            <!-- Dynamic symptom pills -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Treatment & Medicines Grid (Dual Prescription) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        
+        <!-- Column 1: Chemical Medicines -->
+        <div class="card-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center space-x-2.5 border-b border-slate-100 pb-4 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-capsules"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Chemical Agrochemicals & Medicines</h3>
+              <p class="text-xs text-slate-500">Commercial fungicides, bactericides & insecticides with dosages</p>
+            </div>
+          </div>
+
+          <div id="chemical-medicines-container" class="space-y-4">
+            <!-- Dynamic chemical medicine cards -->
+          </div>
+        </div>
+
+        <!-- Column 2: Organic & Biological Remedies -->
+        <div class="card-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center space-x-2.5 border-b border-slate-100 pb-4 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-seedling"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Organic & Biological Remedies</h3>
+              <p class="text-xs text-slate-500">Eco-friendly botanicals, bio-fungicides & natural recipes</p>
+            </div>
+          </div>
+
+          <div id="organic-remedies-container" class="space-y-4">
+            <!-- Dynamic organic remedy cards -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Preventative Agronomic Best Practices -->
+      <div class="card-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div class="flex items-center space-x-2.5 border-b border-slate-100 pb-4 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-shield"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Agronomic Prevention & Cultural Practices</h3>
+            <p class="text-xs text-slate-500">Field management, irrigation adjustments & soil health</p>
+          </div>
+        </div>
+
+        <ul id="res-preventive-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
+          <!-- Dynamic prevention items -->
+        </ul>
+      </div>
+
+      <!-- Safety Precautions & PPE Alert -->
+      <div class="card-print bg-amber-50/60 rounded-2xl border border-amber-200 p-6 mb-8">
+        <div class="flex items-center space-x-2.5 mb-3">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg"></i>
+          <h3 class="font-bold text-amber-950 text-base">Spraying Safety, PPE & Environmental Precautions</h3>
+        </div>
+        <ul id="res-safety-list" class="space-y-1.5 text-xs text-amber-900">
+          <!-- Dynamic safety guidelines -->
+        </ul>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print mt-auto">
+    <div class="max-w-6xl mx-auto px-4">
+      <p>AgriDoc AI • Powered by Google Gemini Multimodal Vision • Agricultural Extension & Pathology Diagnostic Advisor</p>
+      <p class="mt-1 text-slate-400">Always follow local agricultural regulations and read agrochemical labels prior to chemical application.</p>
+    </div>
+  </footer>
+
+  <!-- Settings Modal (Gemini API Key) -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6 relative">
+      
+      <!-- Close Button -->
+      <button id="close-settings-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-lg">Gemini API Key Settings</h3>
+          <p class="text-xs text-slate-500">Required for AI vision crop analysis</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-4">
+        Your API key is stored securely in your local environment file (<code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">.env</code>). Get a free API key at <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline font-semibold">Google AI Studio</a>.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label for="api-key-input" class="block text-xs font-semibold text-slate-700 mb-1">Enter Gemini API Key</label>
+          <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
+        </div>
+
+        <div class="flex items-center text-xs text-slate-600">
+          <input type="checkbox" id="save-env-checkbox" checked class="rounded text-brand-600 focus:ring-brand-500 mr-2" />
+          <label for="save-env-checkbox">Persist key to local <code class="font-mono">.env</code> file</label>
+        </div>
+
+        <div id="settings-status-msg" class="hidden text-xs py-2 px-3 rounded-lg"></div>
+
+        <div class="pt-2 flex justify-end space-x-2">
+          <button id="cancel-settings-btn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition">
+            Cancel
+          </button>
+          <button id="save-key-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-sm">
+            Save Key
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
