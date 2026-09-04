@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AgriDoc AI: AI-Powered Crop Disease Diagnosis & Remedy Advisor 🌾🔬
 
 AgriDoc AI is an intelligent agricultural extension tool that allows farmers, agronomists, and gardeners to capture or upload images of diseased crops, instantly identifies the plant and pathogen using Google Gemini Multimodal Vision, and prescribes actionable chemical medicines (with exact dosages), organic remedies, and preventive agronomic practices.
@@ -74,3 +75,7 @@ ANTIGRAVITY-WORKSHOP/
 
 ## Safety Disclaimer
 AgriDoc AI provides guidance based on computer vision models. Always verify local pesticide regulations, follow agrochemical safety label instructions, wear personal protective equipment (PPE), and respect Pre-Harvest Intervals before harvesting crops for human consumption.
+=======
+# agridoc-ai
+An AI-powered agricultural assistant that helps farmers identify crop diseases and provides intelligent insights and recommendations for better crop management.
+
