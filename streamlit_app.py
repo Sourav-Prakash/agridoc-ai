@@ -157,20 +157,26 @@ with st.sidebar:
     st.divider()
 
     active_key = get_api_key()
-    if active_key:
-        masked = active_key[:4] + "..." + active_key[-4:] if len(active_key) >= 8 else "****"
-        st.success(f"API Key Active ({masked})")
+    if not active_key:
+        st.error("⚠️ System Notice: Gemini API Key not configured by administrator.")
+        with st.expander("Admin Setup (Only for Owner)"):
+            st.text_input("Enter Gemini API Key", type="password", key="user_gemini_api_key")
+            st.caption("Owner: To make this app work for all visitors without asking them for a key, add `GEMINI_API_KEY` to your Streamlit Cloud Secrets.")
     else:
-        st.warning("Gemini API Key Required")
-        user_key = st.text_input("Enter Gemini API Key", type="password", key="user_gemini_api_key")
-        st.caption("Get a free key from [Google AI Studio](https://aistudio.google.com/).")
+        st.success("🟢 AI Diagnostic Engine: Online")
 
-    st.divider()
     st.markdown("""
-    **How to use:**
-    1. Capture a leaf using your camera or upload an image.
-    2. Click **Run Diagnosis**.
-    3. Review chemical dosages, organic recipes, and prevention advice.
+    ### 🌿 About AgriDoc AI
+    AgriDoc AI uses advanced computer vision to assist farmers, growers, and researchers:
+    - **Pathogen Identification**: Fungal, bacterial, and viral crop diseases.
+    - **Agrochemical Prescriptions**: Generic & commercial medicines with exact dilution ratios.
+    - **Eco-Friendly Care**: Biological remedies and cultural prevention practices.
+
+    ---
+    ### 📋 Instructions
+    1. **Snap or upload** a clear photo of the infected crop foliage.
+    2. Click **🔬 Diagnose Crop Health**.
+    3. Get an instant prescription with chemical dosages and organic remedies.
     """)
 
 
